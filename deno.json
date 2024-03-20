@@ -1,0 +1,19 @@
+{
+  "lock": false,
+  "tasks": {
+    "dev": "deno run --allow-read --allow-write --allow-env --allow-run --allow-net build.ts serve --dev",
+    "build": "deno run --allow-read --allow-write --allow-env --allow-run --allow-net build.ts build"
+  },
+  "compilerOptions": {
+    "lib": ["deno.window", "dom", "dom.iterable"],
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment"
+  },
+  "imports": {
+    "$std/": "https://deno.land/std@0.204.0/",
+    "preact": "https://esm.sh/preact@10.19.7",
+    "preact/hooks": "https://esm.sh/preact@10.19.7/hooks",
+    "@tauri-apps/api/": "https://esm.sh/@tauri-apps/api@1.5.0/"
+  },
+  "exclude": ["src-tauri"]
+}
