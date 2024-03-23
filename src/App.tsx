@@ -2,13 +2,13 @@ import { h } from "preact";
 import { useContext, useEffect, useState } from "preact/hooks";
 import { invoke } from "@tauri-apps/api/tauri";
 import { listen } from "@tauri-apps/api/event";
-import { BinIPCChannel } from "./index.tsx";
+import { GlobalChannel } from "./globalChannel.ts";
 export default function App() {
   const [payloadText, setPayloadText] = useState("");
   const [totalBytes, setTotalBytes] = useState(0);
   const [startTime, setStartTime] = useState(Date.now());
 
-  const channel = useContext(BinIPCChannel);
+  const channel = useContext(GlobalChannel);
 
   useEffect(() => {
     if (channel.receiver.locked) {
