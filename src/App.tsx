@@ -1,35 +1,62 @@
 import { h } from "preact";
-import { useState } from "preact/hooks";
+import { useContext, useEffect, useState } from "preact/hooks";
 import { invoke } from "@tauri-apps/api/tauri";
+import { listen } from "@tauri-apps/api/event";
+import { BinIPCChannel } from "./index.tsx";
 export default function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [payloadText, setPayloadText] = useState("");
+  const [totalBytes, setTotalBytes] = useState(0);
+  const [startTime, setStartTime] = useState(Date.now());
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const channel = useContext(BinIPCChannel);
+
+  useEffect(() => {
+    if (channel.receiver.locked) {
+      return;
+    }
+    const reader = channel.receiver.getReader();
+    let reading = true;
+    const readloop = (async () => {
+      const decoder = new TextDecoder("utf-8");
+      while (reading) {
+        const { done, value } = await reader.read();
+        if (done) {
+          return;
+        }
+        setTotalBytes((t) => t + value.byteLength);
+        setPayloadText(decoder.decode(value));
+      }
+    })();
+
+    return () => {
+      (async () => {
+        reading = false;
+        await readloop;
+        reader.releaseLock();
+      })();
+    };
+  });
+
+  const elapsed = Date.now() - startTime;
+  const mbps = (totalBytes * 8 / 1000000) / (elapsed / 1000);
 
   return (
-    <div className="container">
+    <div style={{ display: "flex", flexDirection: "column" }}>
       <h1>Welcome to Tauri!</h1>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
+      <button
+        onClick={() => {
+          invoke("start");
         }}
       >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
+        start
+      </button>
 
-      <p>{greetMsg}</p>
+      <textarea value={payloadText}></textarea>
+
+      <div style={{ display: "flex", flexDirection: "row", gap: "1em" }}>
+        <span>{totalBytes}B/{elapsed}ms</span>
+        <span>{mbps.toFixed(3)}Mbps</span>
+      </div>
     </div>
   );
 }
